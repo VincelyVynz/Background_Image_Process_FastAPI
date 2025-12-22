@@ -25,9 +25,8 @@ class Job:
 
 
 class JobManager:
-    def __init__(self):
-        self.jobs: Dict[str, Job] = {}
-
+    def __init__(self, jobs_dict: Optional[Dict[str, Job]] = None):
+        self.jobs: Dict[str, Job] = jobs_dict if jobs_dict is not None else {}
 
     def create_job(self, input_path: str, output_path: str) -> str:
         job = Job(
@@ -47,7 +46,7 @@ class JobManager:
         return self.jobs.get(job_id)
 
     def get_next_pending_job(self) -> Optional[Job]:
-        for job in self.jobs.values():
+        for job in list(self.jobs.values()):
             if job.status == JobState.PENDING:
                 return job
         return None
@@ -62,6 +61,7 @@ class JobManager:
         if not job:
             return
 
+
         job.status = job_status
 
         if job_status == JobState.RUNNING:
@@ -70,3 +70,6 @@ class JobManager:
         elif job_status in (JobState.COMPLETED, JobState.FAILED):
             job.finished_at = datetime.now()
             job.error = error
+            
+
+        self.jobs[job_id] = job
