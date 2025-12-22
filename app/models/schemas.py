@@ -9,6 +9,7 @@ class JobStatusResponse(BaseModel):
     status: str
     input_path: str
     output_path: Optional[str] = None
+    error: str | None
 
 class JobListResponse(BaseModel):
     jobs: List[JobStatusResponse]
