@@ -29,7 +29,7 @@ def upload_image(file: UploadFile):
     input_path = os.path.join(UPLOAD_FOLDER, file.filename)
 
     with open(input_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+        shutil.copyfileobj(file.file, f)  # type: ignore
 
     name, ext = os.path.splitext(file.filename)
     output_filename = f"{name}_greyscale{ext}"
@@ -43,7 +43,9 @@ def upload_image(file: UploadFile):
     return JobStatusResponse(
         job_id=job_id,
         status=JobState.PENDING.value,
-        error=  None
+        input_path=input_path,
+        output_path=output_path,
+        error=None
     )
 
 
@@ -57,5 +59,7 @@ def get_job_status(job_id: str):
     return JobStatusResponse(
         job_id=job.job_id,
         status=job.status.value,
+        input_path=job.input_path,
+        output_path=job.output_path,
         error=job.error,
     )
