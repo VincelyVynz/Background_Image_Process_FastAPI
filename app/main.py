@@ -10,7 +10,6 @@ from app.jobs.worker import run_worker
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     print("Starting up...")
     manager = Manager()
     shared_jobs = manager.dict()

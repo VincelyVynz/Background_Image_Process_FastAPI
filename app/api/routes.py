@@ -29,7 +29,7 @@ def upload_image(file: UploadFile):
     input_path = os.path.join(UPLOAD_FOLDER, file.filename)
 
     with open(input_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)  # type: ignore
+        shutil.copyfileobj(file.file, f)
 
     name, ext = os.path.splitext(file.filename)
     output_filename = f"{name}_greyscale{ext}"
