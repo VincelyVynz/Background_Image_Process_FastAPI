@@ -1,43 +1,73 @@
 import time
+import os
+from concurrent.futures import ProcessPoolExecutor, Future
+from typing import Dict
+
 from app.jobs.manager import JobManager, JobState
 from app.utils.image_ops import process_image
 
 
+def _process_image_task(input_path: str, output_path: str) -> bool:
+    """
+    Runs in a separate process.
+    MUST be top-level for multiprocessing.
+    """
+    return process_image(input_path, output_path)
+
+
 def run_worker(jobs_dict):
-
     job_manager = JobManager(jobs_dict)
-    print("Worker process started...")
+    print(f"Worker process started (pid={os.getpid()})")
 
-    while True:
-        job = job_manager.get_next_pending_job()
+    # Use all CPU cores by default
+    with ProcessPoolExecutor() as executor:
+        futures: Dict[str, Future] = {}
 
-        if not job:
-            time.sleep(1)
-            continue
+        while True:
+            # 1️⃣ Submit new jobs
+            job = job_manager.get_next_pending_job()
 
-        print(f"Processing job {job.job_id}...")
-        job_manager.update_status(job.job_id, JobState.RUNNING)
+            if job and job.job_id not in futures:
+                print(f"Submitting job {job.job_id}...")
+                job_manager.update_status(job.job_id, JobState.RUNNING)
 
-        try:
-            success = process_image(job.input_path, job.output_path)
-
-            if success:
-                job_manager.update_status(job.job_id, JobState.COMPLETED)
-                print(f"Job {job.job_id} completed.")
-            else:
-                job_manager.update_status(
-                    job.job_id,
-                    JobState.FAILED,
-                    error="Image processing returned False",
+                futures[job.job_id] = executor.submit(
+                    _process_image_task,
+                    job.input_path,
+                    job.output_path,
                 )
-                print(f"Job {job.job_id} failed.")
 
-        except Exception as e:
-            job_manager.update_status(
-                job.job_id,
-                JobState.FAILED,
-                error=str(e) or None,
-            )
-            print(f"Job {job.job_id} failed with exception: {e}")
+            # 2️⃣ Collect finished jobs
+            finished = [
+                job_id for job_id, future in futures.items()
+                if future.done()
+            ]
 
-        time.sleep(1)
+            for job_id in finished:
+                future = futures[job_id]
+
+                try:
+                    success = future.result()
+
+                    if success:
+                        job_manager.update_status(job_id, JobState.COMPLETED)
+                        print(f"Job {job_id} completed.")
+                    else:
+                        job_manager.update_status(
+                            job_id,
+                            JobState.FAILED,
+                            error="Image processing returned False",
+                        )
+                        print(f"Job {job_id} failed.")
+
+                except Exception as e:
+                    job_manager.update_status(
+                        job_id,
+                        JobState.FAILED,
+                        error=str(e),
+                    )
+                    print(f"Job {job_id} failed with exception: {e}")
+
+                del futures[job_id]
+
+            time.sleep(0.1)
