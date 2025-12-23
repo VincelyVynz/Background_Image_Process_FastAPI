@@ -8,10 +8,7 @@ from app.utils.image_ops import process_image
 
 
 def _process_image_task(input_path: str, output_path: str) -> bool:
-    """
-    Runs in a separate process.
-    MUST be top-level for multiprocessing.
-    """
+
     return process_image(input_path, output_path)
 
 
@@ -19,12 +16,12 @@ def run_worker(jobs_dict):
     job_manager = JobManager(jobs_dict)
     print(f"Worker process started (pid={os.getpid()})")
 
-    # Use all CPU cores by default
+
     with ProcessPoolExecutor() as executor:
         futures: Dict[str, Future] = {}
 
         while True:
-            # 1️⃣ Submit new jobs
+
             job = job_manager.get_next_pending_job()
 
             if job and job.job_id not in futures:
@@ -37,7 +34,7 @@ def run_worker(jobs_dict):
                     job.output_path,
                 )
 
-            # 2️⃣ Collect finished jobs
+
             finished = [
                 job_id for job_id, future in futures.items()
                 if future.done()
@@ -70,4 +67,4 @@ def run_worker(jobs_dict):
 
                 del futures[job_id]
 
-            time.sleep(0.1)
+            time.sleep(1)
