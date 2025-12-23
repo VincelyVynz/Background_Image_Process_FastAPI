@@ -7,7 +7,7 @@ from app.jobs.manager import JobManager, JobState
 from app.utils.image_ops import process_image
 
 
-def _process_image_task(input_path: str, output_path: str) -> bool:
+def process_image_task(input_path: str, output_path: str) -> bool:
 
     return process_image(input_path, output_path)
 
@@ -29,7 +29,7 @@ def run_worker(jobs_dict):
                 job_manager.update_status(job.job_id, JobState.RUNNING)
 
                 futures[job.job_id] = executor.submit(
-                    _process_image_task,
+                    process_image_task,
                     job.input_path,
                     job.output_path,
                 )

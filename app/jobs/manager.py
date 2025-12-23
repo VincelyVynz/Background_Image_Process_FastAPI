@@ -22,13 +22,14 @@ class Job:
     started_at: Optional[datetime]
     finished_at: Optional[datetime]
     error: Optional[str]
+    session_id: Optional[str] = None
 
 
 class JobManager:
     def __init__(self, jobs_dict: Optional[Dict[str, Job]] = None):
         self.jobs: Dict[str, Job] = jobs_dict if jobs_dict is not None else {}
 
-    def create_job(self, input_path: str, output_path: str) -> str:
+    def create_job(self, input_path: str, output_path: str, session_id: Optional[str] = None) -> str:
         job = Job(
             job_id=str(uuid.uuid4()),
             status=JobState.PENDING,
@@ -38,6 +39,7 @@ class JobManager:
             started_at=None,
             finished_at=None,
             error=None,
+            session_id=session_id
         )
         self.jobs[job.job_id] = job
         return job.job_id

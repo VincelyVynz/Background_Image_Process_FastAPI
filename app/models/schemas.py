@@ -5,6 +5,7 @@ class ImageUploadRequest(BaseModel):
     filename: str
 
 class JobStatusResponse(BaseModel):
+    session_id: Optional[str] = None
     job_id: str
     status: str
     input_path: str
