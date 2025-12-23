@@ -79,3 +79,21 @@ def get_job_status(job_id: str):
         output_path=job.output_path,
         error=job.error,
     )
+
+@router.get("/sessions/{session_id}", response_model=list[JobStatusResponse])
+def get_session_jobs(session_id: str):
+    jobs = job_manager.get_jobs_by_session(session_id)
+    if not jobs:
+        raise HTTPException(status_code=404, detail="Session not found or no jobs in session")
+
+    return [
+        JobStatusResponse(
+            session_id=job.session_id,
+            job_id=job.job_id,
+            status=job.status.value,
+            input_path=job.input_path,
+            output_path=job.output_path,
+            error=job.error,
+        )
+        for job in jobs
+    ]

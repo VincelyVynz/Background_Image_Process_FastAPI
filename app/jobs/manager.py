@@ -2,7 +2,7 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 import uuid
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 
 class JobState(Enum):
@@ -46,6 +46,9 @@ class JobManager:
 
     def get_job(self, job_id: str) -> Optional[Job]:
         return self.jobs.get(job_id)
+
+    def get_jobs_by_session(self, session_id: str) -> List[Job]:
+        return [job for job in self.jobs.values() if job.session_id == session_id]
 
     def get_next_pending_job(self) -> Optional[Job]:
         for job in list(self.jobs.values()):
