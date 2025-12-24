@@ -7,12 +7,12 @@ from app.jobs.manager import JobManager, JobState
 from app.utils.image_ops import process_image
 
 
-def process_image_task(input_path: str, output_path: str) -> bool:
+def process_image_task(input_path: str, output_path: str, sem) -> bool:
+    with sem:
+        return process_image(input_path, output_path)
 
-    return process_image(input_path, output_path)
 
-
-def run_worker(jobs_dict):
+def run_worker(jobs_dict, sem):
     job_manager = JobManager(jobs_dict)
     print(f"Worker process started (pid={os.getpid()})")
 
@@ -28,10 +28,12 @@ def run_worker(jobs_dict):
                 print(f"Submitting job {job.job_id}...")
                 job_manager.update_status(job.job_id, JobState.RUNNING)
 
+                # Pass the semaphore into the task being executed by the pool
                 futures[job.job_id] = executor.submit(
                     process_image_task,
                     job.input_path,
                     job.output_path,
+                    sem
                 )
 
 

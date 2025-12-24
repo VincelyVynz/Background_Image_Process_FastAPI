@@ -15,10 +15,11 @@ async def lifespan(app: FastAPI):
     shared_jobs = manager.dict()
     
 
+    semaphore = manager.Semaphore(4)
     routes.job_manager = JobManager(shared_jobs)
-    
 
-    worker_process = Process(target=run_worker, args=(shared_jobs,))
+    worker_process = Process(target=run_worker, args=(shared_jobs, semaphore))
+
     worker_process.start()
     
     yield
