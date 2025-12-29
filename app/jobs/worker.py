@@ -1,6 +1,7 @@
 import time
 import os
 from concurrent.futures import ProcessPoolExecutor, Future
+from html.parser import incomplete
 from typing import Dict
 
 from app.jobs.manager import JobManager, JobState
@@ -46,6 +47,7 @@ def run_worker(jobs_dict, sem):
                 future = futures[job_id]
                 job = job_manager.get_job(job_id)
                 input_file = job.input_path if job else None
+                current_session_id = job.session_id if job else None
 
                 try:
                     success = future.result()
@@ -76,6 +78,21 @@ def run_worker(jobs_dict, sem):
                     except Exception as e:
                         print(f"Failed to delete input file {input_file}: {e}")
 
+                if current_session_id:
+                    incomplete_sessions = any(
+                        j.session_id == current_session_id and
+                        j.status in (JobState.PENDING, JobState.RUNNING)
+                        for j in jobs_dict.values()
+                    )
+
+                    if not incomplete_sessions:
+                        print(f"Clearing session {current_session_id}")
+                        job_ids_to_clear = [
+                            jid for jid, j in jobs_dict.items()
+                            if j.session_id == current_session_id
+                        ]
+                        for jid in job_ids_to_clear:
+                            del jobs_dict[jid]
 
 
                 del futures[job_id]
