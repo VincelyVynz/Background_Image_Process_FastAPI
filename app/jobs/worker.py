@@ -44,6 +44,8 @@ def run_worker(jobs_dict, sem):
 
             for job_id in finished:
                 future = futures[job_id]
+                job = job_manager.get_job(job_id)
+                input_file = job.input_path if job else None
 
                 try:
                     success = future.result()
@@ -66,6 +68,15 @@ def run_worker(jobs_dict, sem):
                         error=str(e),
                     )
                     print(f"Job {job_id} failed with exception: {e}")
+
+                if input_file and os.path.exists(input_file):
+                    try:
+                        os.remove(input_file)
+                        print(f"Image {input_file} deleted")
+                    except Exception as e:
+                        print(f"Failed to delete input file {input_file}: {e}")
+
+
 
                 del futures[job_id]
 
